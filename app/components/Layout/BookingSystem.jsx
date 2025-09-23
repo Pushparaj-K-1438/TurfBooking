@@ -254,7 +254,7 @@ const BookingSystem = () => {
           </div>
         </div>
 
-        <button type="submit" className='bg-[#16a249] text-white py-2 px-4 rounded-md hover:bg-primary/90 transition'>
+        <button type="submit" className='bg-[#16a249] text-white py-2 px-4 rounded-md hover:bg-primary/90 transition cursor-pointer'>
           Confirm Booking
         </button>
       </form>

@@ -1,13 +1,13 @@
+import Link from 'next/link'
 import React from 'react'
 
 const Footer = () => {
     return (
         <footer className="footer footer-horizontal footer-center bg-base-200 text-base-content rounded p-24 flex flex-col gap-8 bg-[#16a249]">
             <nav className="flex md:flex-row flex-col justify-center gap-4">
-                <a className="link link-hover">About us</a>
-                <a className="link link-hover">Contact</a>
-                <a className="link link-hover">Jobs</a>
-                <a className="link link-hover">Press kit</a>
+                <Link href="/" className="link link-hover">Book Now</Link>
+                <Link href="/gallery" className="link link-hover">Gallery</Link>
+                <Link href="/contact" className="link link-hover">Contact Us</Link>
             </nav>
             <nav>
                 <div className="flex md:justify-center gap-4">

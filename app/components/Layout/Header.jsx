@@ -6,11 +6,11 @@ const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const navItems = [
-    { icon: House, label: "Home", href: "#home" },
-    { icon: TicketCheck , label: "Book Now", href: "#booking" },
-    { icon: Images, label: "Gallery", href: "#gallery" },
-    { icon: Phone, label: "Contact", href: "#contact" },
-    { icon: Users, label: "Login", href: "#login" },
+    { icon: House, label: "Home", href: "/" },
+    // { icon: TicketCheck , label: "Book Now", href: "#booking" },
+    { icon: Images, label: "Gallery", href: "/gallery" },
+    { icon: Phone, label: "Contact", href: "/contact" },
+    { icon: Users, label: "Login", href: "/login" },
   ];
 
   return (
@@ -32,7 +32,7 @@ const Header = () => {
                   key={item.label}
                   variant="ghost"
                   size="sm"
-                  className="transition-smooth hover:bg-primary/10 flex items-center"
+                  className="transition-smooth flex items-center font-medium"
                   href={item.href}
                 >
                   <item.icon className="w-4 h-4 mr-2" />
@@ -69,7 +69,7 @@ const Header = () => {
                   variant="ghost"
                   size="sm"
                   href={item.href}
-                  className="w-full justify-start transition-smooth hover:bg-primary/10 flex items-center cursor-pointer"
+                  className="w-full justify-start transition-smooth hover:bg-primary/10 flex items-center cursor-pointer font-medium"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   <item.icon className="w-4 h-4 mr-2 " />
