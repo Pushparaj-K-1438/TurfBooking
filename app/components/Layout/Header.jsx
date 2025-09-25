@@ -1,20 +1,73 @@
 "use client";
-import { useState } from "react";
-import { Menu, X, Images, Users, Phone, TicketCheck , House } from "lucide-react";
+import { useState, useEffect } from "react";
+import { usePathname, useRouter } from 'next/navigation';
+import { Menu, X, Images, Users, Phone, LayoutDashboard, LogOut, User, House } from "lucide-react";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
-  const navItems = [
+  // Check authentication status
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/verify', {
+          credentials: 'include',
+          cache: 'no-store'
+        });
+        const data = await response.json();
+        setIsLoggedIn(data.authenticated);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsLoggedIn(false);
+      }
+    };
+
+    checkAuth();
+  }, [pathname]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { 
+        method: 'POST',
+        credentials: 'include'
+      });
+      setIsLoggedIn(false);
+      router.push('/login');
+      router.refresh();
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
+  // Common navigation items
+  const commonNavItems = [
     { icon: House, label: "Home", href: "/" },
-    // { icon: TicketCheck , label: "Book Now", href: "#booking" },
     { icon: Images, label: "Gallery", href: "/gallery" },
     { icon: Phone, label: "Contact", href: "/contact" },
-    { icon: Users, label: "Login", href: "/login" },
+  ];
+
+  // Private navigation items (only shown when logged in)
+  const privateNavItems = [
+    { icon: LayoutDashboard, label: "Dashboard", href: "/auth/dashboard" },
+  ];
+
+  // Combine navigation items based on auth state
+  const navItems = [
+    ...commonNavItems,
+    ...(isLoggedIn ? privateNavItems : []),
+    { 
+      icon: isLoggedIn ? LogOut : Users, 
+      label: isLoggedIn ? "Logout" : "Login", 
+      href: isLoggedIn ? "#" : "/login",
+      onClick: isLoggedIn ? handleLogout : null
+    },
   ];
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-card/95 backdrop-blur-md border-b shadow-soft bg-white text-black">
+    <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 shadow-soft bg-white text-black">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -32,8 +85,16 @@ const Header = () => {
                   key={item.label}
                   variant="ghost"
                   size="sm"
-                  className="transition-smooth flex items-center font-medium"
+                  className={`transition-smooth flex items-center font-medium ${
+                    pathname === item.href ? 'text-primary' : 'hover:text-primary'
+                  }`}
                   href={item.href}
+                  onClick={(e) => {
+                    if (item.onClick) {
+                      e.preventDefault();
+                      item.onClick();
+                    }
+                  }}
                 >
                   <item.icon className="w-4 h-4 mr-2" />
                   {item.label}
@@ -70,9 +131,15 @@ const Header = () => {
                   size="sm"
                   href={item.href}
                   className="w-full justify-start transition-smooth hover:bg-primary/10 flex items-center cursor-pointer font-medium"
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={(e) => {
+                    setIsMenuOpen(false);
+                    if (item.onClick) {
+                      e.preventDefault();
+                      item.onClick();
+                    }
+                  }}
                 >
-                  <item.icon className="w-4 h-4 mr-2 " />
+                  <item.icon className="w-4 h-4 mr-2" />
                   {item.label}
                 </a>
               ))}

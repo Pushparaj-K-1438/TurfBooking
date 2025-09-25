@@ -1,6 +1,9 @@
 "use client";
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast, Slide } from 'react-toastify';
 const Login = () => {
+    const router = useRouter();
     const [mobile, setMobile] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -12,7 +15,7 @@ const Login = () => {
         setIsLoading(true);
         setError('');
         try{
-            const response = await fetch('/api/auth/',{
+            const response = await fetch('/api/auth/login',{
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -20,15 +23,32 @@ const Login = () => {
                 body: JSON.stringify({mobile,password})
             });
             if (!response) {
-                setError('Invalid credentials. Please try again.');
+                toast.error('Invalid credentials. Please try again.', {
+                    position: "top-center",
+                    autoClose: 5000,
+                    theme: "colored",
+                    transition: Slide,
+                });
+                return;
             }
             const data = await response.json();
-
+            router.push('/auth/dashboard');
+            toast.success('Login successful!', {
+                position: "top-center",
+                autoClose: 5000,
+                theme: "colored",
+                transition: Slide,
+            });
             console.log("Response:", data);
         }catch(err){
+            toast.error('Something Went Wrong. Please try again.', {
+                position: "top-center",
+                autoClose: 5000,
+                theme: "colored",
+                transition: Slide,
+            });
             console.log(err);
         }
-
         setIsLoading(false);
     };
 

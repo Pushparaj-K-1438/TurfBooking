@@ -16,9 +16,9 @@ const ContactCard = ({ icon, title, subtitle }) => {
 
   return (
     <div className="h-24 relative p-4 rounded-2xl border-2 text-sm font-medium flex items-center justify-center transition-all
-                  bg-white text-[#16a249] border-[#dae7da] gap-4">
+                  bg-white text-[#16a249] border-[#E0F5E8] gap-4">
       <div className="flex items-center gap-4">
-        <div className="w-10 h-10 bg-[#dae7da] rounded-[12px] flex items-center justify-center p-">
+        <div className="w-10 h-10 bg-[#E0F5E8] rounded-[12px] flex items-center justify-center p-">
           {icon}
         </div>
         <div>

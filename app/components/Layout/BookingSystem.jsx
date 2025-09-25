@@ -103,20 +103,39 @@ const BookingSystem = () => {
 
       if (!response.ok) {
         const msg = data?.error || 'Failed to create booking';
-        console.error(msg);
+        toast.error(msg, {
+            position: "top-center",
+            autoClose: 5000,
+            theme: "colored",
+            transition: Slide,
+        });
         return;
       }
-
-      // Success: clear form
-      setName('');
-      setMobile('');
-      setSelectedTimeSlot('');
-      toast.success('Your booking has been confirmed!', {
-        position: "top-center",
-        autoClose: 5000,
-        theme: "colored",
-        transition: Slide,
-      });
+      // In the success block of your handleSubmit function
+      if (response.ok) {
+        // Update the local state immediately
+        setBookedSlots(prev => [...prev, selectedTimeSlot]);
+        
+        // Clear the form
+        setName('');
+        setMobile('');
+        setSelectedTimeSlot('');
+        
+        // Show success message
+        toast.success(`Your slot for ${selectedTimeSlot} has been booked successfully.`, {
+          position: "top-center",
+          autoClose: 5000,
+          theme: "colored",
+          transition: Slide,
+        });
+        
+        // Optional: Refresh the booked slots from the server to ensure consistency
+        const refreshResponse = await fetch(`/api/user?date=${date}`);
+        if (refreshResponse.ok) {
+          const data = await refreshResponse.json();
+          setBookedSlots(data.bookedSlots || []);
+        }
+      }
     } catch (error) {
       console.error('Network or parsing error', error);
       toast.error('Something went wrong. Please try again!', {
@@ -192,18 +211,18 @@ const BookingSystem = () => {
               const expired = isSlotExpired(slot);
               const disabled = isBooked || expired;
 
-              let bgColor = "bg-white border-[#dae7da]"; // default
+              let bgColor = "bg-white border-[#E0F5E8]"; // default
               let textColor = "text-black";
-              let borderColor = "border-[#dae7da]";
+              let borderColor = "border-[#E0F5E8]";
 
               if (expired) {
                 bgColor = "bg-gray-200";
                 textColor = "text-black";
                 borderColor = "border-gray-200";
               } else if (isBooked) {
-                bgColor = "bg-[#dae7da]";
+                bgColor = "bg-[#E0F5E8]";
                 textColor = "text-[#16a249]";
-                borderColor = "border-[#dae7da]";
+                borderColor = "border-[#E0F5E8]";
               } else if (selectedTimeSlot === slot) {
                 bgColor = "bg-[#16a249]";
                 textColor = "text-white";
@@ -248,7 +267,7 @@ const BookingSystem = () => {
             <p className='text-sm flex justify-between'><span>Mobile Number: </span><span>{mobile || '-'}</span></p>
             <p className='text-sm flex justify-between'><span>Pick Date: </span><span>{date || '-'}</span></p>
             <p className='text-sm flex justify-between'><span>Selected Time Slot: </span><span>{selectedTimeSlot || '-'}</span></p>
-            <p className='text-sm font-medium flex justify-between border-t pt-2 mt-2 border-[#dae7da]'>
+            <p className='text-sm font-medium flex justify-between border-t pt-2 mt-2 border-[#E0F5E8]'>
               <span>Total: </span><span>₹400</span>
             </p>
           </div>

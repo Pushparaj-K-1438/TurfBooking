@@ -1,6 +1,5 @@
 "use client"
 import GalleryCard from './GalleryCard';
-import { useState } from 'react';
 
 // Import images
 import turfFootball from '../../../public/turf-football.jpg';
