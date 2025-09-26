@@ -52,12 +52,12 @@ const Header = () => {
   // Private navigation items (only shown when logged in)
   const privateNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/auth/dashboard" },
+    { icon: Images, label: "Gallery", href: "/auth/gallery" },
   ];
 
   // Combine navigation items based on auth state
   const navItems = [
-    ...commonNavItems,
-    ...(isLoggedIn ? privateNavItems : []),
+    ...(isLoggedIn ? privateNavItems : commonNavItems),
     { 
       icon: isLoggedIn ? LogOut : Users, 
       label: isLoggedIn ? "Logout" : "Login", 

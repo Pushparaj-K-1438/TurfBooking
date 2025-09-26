@@ -94,7 +94,7 @@ export async function POST(request) {
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'lax',
             path: '/',
-            expires: expires.toISOString()
+            expires: expires
         });
 
         return response;
