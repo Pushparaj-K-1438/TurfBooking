@@ -1,7 +1,7 @@
 "use client";
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { toast, Slide } from 'react-toastify';
+import { showSuccess, showError } from '../../lib/toast';
 const Login = () => {
     const router = useRouter();
     const [mobile, setMobile] = useState('');
@@ -23,31 +23,15 @@ const Login = () => {
                 body: JSON.stringify({mobile,password})
             });
             if (!response) {
-                toast.error('Invalid credentials. Please try again.', {
-                    position: "top-center",
-                    autoClose: 5000,
-                    theme: "colored",
-                    transition: Slide,
-                });
+                showError('Invalid credentials. Please try again.');
                 return;
             }
             const data = await response.json();
+            showSuccess('Login successful!');
             router.push('/auth/dashboard');
-            toast.success('Login successful!', {
-                position: "top-center",
-                autoClose: 5000,
-                theme: "colored",
-                transition: Slide,
-            });
-            console.log("Response:", data);
-        }catch(err){
-            toast.error('Something Went Wrong. Please try again.', {
-                position: "top-center",
-                autoClose: 5000,
-                theme: "colored",
-                transition: Slide,
-            });
-            console.log(err);
+        } catch (error) {
+            console.error('Login error:', error);
+            showError('Something went wrong. Please try again.');
         }
         setIsLoading(false);
     };

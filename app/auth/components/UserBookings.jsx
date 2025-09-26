@@ -1,17 +1,18 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { 
-  User, 
-  Phone, 
-  Clock as ClockIcon, 
-  Calendar as CalendarIcon, 
-  CalendarDays,
-  Clock3,
-  X as XIcon,
-  ArrowUpDown
+import {
+    User,
+    Phone,
+    Clock as ClockIcon,
+    Calendar as CalendarIcon,
+    CalendarDays,
+    Clock3,
+    X as XIcon,
+    ArrowUpDown
 } from "lucide-react";
-import { getTodaysBookings } from '../../actions/bookings';
+import { getTodaysBookings, deleteBooking } from '../../actions/bookings';
 import { format, parseISO } from 'date-fns';
+import { toast, showSuccess, showError } from '../../../lib/toast';
 
 const UserBookings = () => {
     const [bookings, setBookings] = useState([]);
@@ -26,10 +27,10 @@ const UserBookings = () => {
                 if (data && data.success) {
                     setBookings(data.bookings || []);
                 } else {
-                    console.error('Failed to fetch bookings:', data?.error);
+                    showError('Failed to fetch bookings');
                 }
             } catch (error) {
-                console.error('Error fetching bookings:', error);
+                showError('Error loading bookings');
             } finally {
                 setLoading(false);
             }
@@ -47,13 +48,67 @@ const UserBookings = () => {
         }
     };
 
+    const handleCancelBooking = (bookingId) => {
+        const toastId = toast(
+            <div className="p-4 bg-white flex flex-col gap-5">
+                <p className="font-medium mb-4">Are you sure you want to cancel this booking?</p>
+                <div className="flex justify-end gap-2">
+                    <button
+                        onClick={() => {
+                            toast.dismiss(toastId);
+                            handleConfirmCancel(bookingId, toastId);
+                        }}
+                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                    >
+                        Yes, Cancel
+                    </button>
+                    <button
+                        onClick={() => toast.dismiss(toastId)}
+                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded hover:bg-gray-300 transition-colors"
+                    >
+                        No, Keep It
+                    </button>
+                </div>
+            </div>,
+            {
+                position: 'top-center',
+                autoClose: false,
+                closeButton: false,
+                closeOnClick: false,
+                draggable: false,
+                style: {
+                    width: '100%',
+                    maxWidth: '400px',
+                    padding: '0px',
+                },
+            }
+        );
+    };
+
+    const handleConfirmCancel = async (bookingId) => {
+        try {
+            const result = await deleteBooking(bookingId);
+            if (result.success) {
+                // Remove the cancelled booking from the state
+                setBookings(prevBookings =>
+                    prevBookings.filter(booking => booking._id !== bookingId)
+                );
+                showSuccess('Booking cancelled successfully!');
+            } else {
+                showError(result.error || 'Failed to cancel booking');
+            }
+        } catch (error) {
+            console.error('Error cancelling booking:', error);
+            showError('An error occurred while cancelling the booking');
+        }
+    };
+
     const sortedBookings = [...bookings].sort((a, b) => {
         if (sortBy === 'timeSlot') {
-            // Extract start time from timeSlot (e.g., "10:00 - 11:00" -> "10:00")
             const timeA = a.timeSlot.split(' - ')[0];
             const timeB = b.timeSlot.split(' - ')[0];
-            return sortOrder === 'asc' 
-                ? timeA.localeCompare(timeB) 
+            return sortOrder === 'asc'
+                ? timeA.localeCompare(timeB)
                 : timeB.localeCompare(timeA);
         }
         return 0;
@@ -70,7 +125,6 @@ const UserBookings = () => {
     const formatTime = (timeString) => {
         try {
             if (!timeString) return 'N/A';
-            // Assuming timeSlot is in format "HH:mm - HH:mm"
             const [startTime, endTime] = timeString.split(' - ');
             const formatSingleTime = (time) => {
                 const [hours, minutes] = time.split(':');
@@ -103,21 +157,19 @@ const UserBookings = () => {
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-gray-800">Today's Bookings</h2>
+                <h2 className="text-xl font-semibold text-gray-800">Bookings</h2>
                 <div className="flex items-center space-x-2">
                     <span className="text-sm text-gray-500">Sort by:</span>
-                    <button 
+                    <button
                         onClick={() => handleSort('timeSlot')}
-                        className={`flex items-center text-sm px-3 py-1 rounded-md cursor-pointer ${
-                            sortBy === 'timeSlot' ? 'bg-[#E0F5E8] text-primary' : 'text-gray-600'
-                        }`}
+                        className={`flex items-center text-sm px-3 py-1 rounded-md cursor-pointer ${sortBy === 'timeSlot' ? 'bg-[#E0F5E8] text-primary' : 'text-gray-600'
+                            }`}
                     >
                         <Clock3 className="w-4 h-4 mr-1" />
                         Time
-                        <ArrowUpDown 
-                            className={`w-3 h-3 ml-1 ${
-                                sortBy === 'timeSlot' ? 'text-primary' : 'text-gray-400'
-                            }`}
+                        <ArrowUpDown
+                            className={`w-3 h-3 ml-1 ${sortBy === 'timeSlot' ? 'text-primary' : 'text-gray-400'
+                                }`}
                         />
                     </button>
                 </div>
@@ -125,7 +177,7 @@ const UserBookings = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {sortedBookings.map((booking) => (
-                    <div 
+                    <div
                         key={booking._id}
                         className="p-4 rounded-lg border border-gray-200 bg-white hover:shadow-md transition-shadow shadow-sm"
                     >
@@ -149,8 +201,8 @@ const UserBookings = () => {
                             {booking.mobile && (
                                 <div className="flex items-center text-sm text-gray-600">
                                     <Phone className="w-4 h-4 mr-2 text-gray-400" />
-                                    <a 
-                                        href={`tel:${booking.mobile}`} 
+                                    <a
+                                        href={`tel:${booking.mobile}`}
                                         className="text-blue-600 hover:underline"
                                         title={`Call ${booking.mobile}`}
                                     >
@@ -172,7 +224,39 @@ const UserBookings = () => {
                             <p className="text-xs text-gray-500">
                                 Booked on {formatDate(booking.createdAt)}
                             </p>
-                            <button className="text-xs bg-[#EF4444] text-white px-4 py-2 rounded flex gap-1 cursor-pointer"><XIcon className="w-4 h-4 mr-2" />Cancel</button>
+                            {(() => {
+                                try {
+                                    // Parse the booking date and time
+                                    const [startTime] = booking.timeSlot.split(' - ');
+                                    const [hours, minutes] = startTime.split(':').map(Number);
+                                    
+                                    // Create date object for the booking
+                                    const [year, month, day] = booking.date.split('-').map(Number);
+                                    const bookingTime = new Date(year, month - 1, day, hours, minutes);
+                                    
+                                    // Get current time
+                                    const now = new Date();
+                                    
+                                    // Calculate the cutoff time (10 minutes before booking)
+                                    const tenMinutesBefore = new Date(bookingTime.getTime() + (10 * 60 * 1000));
+                                    
+                                    // Show cancel button only if current time is before the cutoff
+                                    if (now < tenMinutesBefore) {
+                                        return (
+                                            <button
+                                                onClick={() => handleCancelBooking(booking._id)}
+                                                className="text-xs bg-[#EF4444] hover:bg-[#DC2626] text-white px-4 py-2 rounded flex gap-1 cursor-pointer transition-colors"
+                                            >
+                                                <XIcon className="w-4 h-4 mr-1" />
+                                                Cancel
+                                            </button>
+                                        );
+                                    }
+                                } catch (error) {
+                                    console.error('Error processing booking time:', error);
+                                }
+                                return null;
+                            })()}
                         </div>
                     </div>
                 ))}

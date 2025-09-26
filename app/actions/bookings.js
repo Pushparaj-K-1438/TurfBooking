@@ -70,6 +70,29 @@ export async function getBookingsStats(timeframe = 'today') {
         };
     }
 }
+export async function deleteBooking(bookingId) {
+    try {
+        await connectDB();
+        console.log(`Deleting booking with ID: ${bookingId}`);
+        
+        const result = await Booking.findByIdAndDelete(bookingId);
+        
+        if (!result) {
+            console.error('Booking not found');
+            return { success: false, error: 'Booking not found' };
+        }
+        
+        console.log('Booking deleted successfully');
+        return { success: true };
+    } catch (error) {
+        console.error('Error deleting booking:', error);
+        return { 
+            success: false, 
+            error: error.message 
+        };
+    }
+}
+
 function formatDateLocal(date) {
     return date.toLocaleDateString("en-CA"); // gives YYYY-MM-DD in local timezone
 }

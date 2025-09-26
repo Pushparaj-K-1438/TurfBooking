@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from 'react';
 import { Calendar, Clock, CalendarDays, CalendarRange } from "lucide-react";
 import { getBookingsStats } from '../../actions/bookings';
+import { showError } from '../../../lib/toast';
 
 const TIME_FRAMES = [
     { id: 'today', label: "Today's", icon: <Clock className="w-4 h-4" /> },
@@ -19,20 +20,20 @@ const BookingsCard = () => {
 
     useEffect(() => {
         const fetchAllStats = async () => {
-            setIsLoading(true);
             setError(null);
             try {
                 const statsPromises = TIME_FRAMES.map(async (timeframe) => {
                     try {
                         const data = await getBookingsStats(timeframe.id);
                         if (!data.success) {
-                            console.error(`Error fetching ${timeframe.id} stats:`, data.error);
+                            showError(`Failed to load ${timeframe.label.toLowerCase()} stats`);
                             return { [timeframe.id]: { count: 0, error: data.error } };
                         }
                         return { [timeframe.id]: { count: data.count } };
-                    } catch (err) {
-                        console.error(`Error in ${timeframe.id} stats:`, err);
-                        return { [timeframe.id]: { count: 0, error: err.message } };
+                    } catch (error) {
+                        console.error(`Error in ${timeframe.id} stats:`, error);
+                        showError(`Error loading ${timeframe.label.toLowerCase()} stats`);
+                        return { [timeframe.id]: { count: 0, error: error.message } };
                     }
                 });
 
@@ -41,12 +42,12 @@ const BookingsCard = () => {
                 setStats(mergedStats);
             } catch (error) {
                 console.error('Error fetching all stats:', error);
+                showError('Failed to load booking statistics');
                 setError('Failed to load booking statistics');
             } finally {
                 setIsLoading(false);
             }
         };
-
         fetchAllStats();
     }, []);
 
