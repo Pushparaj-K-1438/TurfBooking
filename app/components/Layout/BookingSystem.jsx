@@ -1,5 +1,6 @@
 'use client';
 import React, { useEffect, useState } from 'react';
+import moment from 'moment-timezone';
 import { User, Phone } from "lucide-react";
 import DatePicker from '../DatePicker';
 import { toast, Slide } from 'react-toastify';
@@ -41,22 +42,29 @@ const BookingSystem = () => {
 
   // 🔹 Check if slot is expired
   const isSlotExpired = (slot) => {
-    const now = new Date();
-    const selectedDate = new Date(date);
-    const today = new Date();
+    // Always use Asia/Kolkata timezone
+    const timeZone = 'Asia/Kolkata';
+    // Get current time in IST
+    const now = moment.tz(timeZone);
+    // Get selected date in IST
+    const selectedDate = moment.tz(date, 'YYYY-MM-DD', timeZone);
+    const today = moment.tz(timeZone);
 
-    const selectedDateStr = selectedDate.toISOString().split("T")[0];
-    const todayStr = today.toISOString().split("T")[0];
+    const selectedDateStr = selectedDate.format('YYYY-MM-DD');
+    const todayStr = today.format('YYYY-MM-DD');
 
     if (selectedDateStr !== todayStr) return false; // Only check for today
 
     const endTime = slot.split(" - ")[1];
     const [endHour, endMinute] = endTime.split(":").map(Number);
 
-    const slotEnd = new Date(selectedDate);
-    slotEnd.setHours(endHour, endMinute, 0, 0);
+    // Set slot end time in IST
+    const slotEnd = selectedDate.clone().hour(endHour).minute(endMinute).second(0).millisecond(0);
 
-    return now > slotEnd;
+    // Debug: Log slot expiration calculation
+    console.log(`[BookingSystem][IST] Slot: ${slot}, Now: ${now.format()}, SlotEnd: ${slotEnd.format()}, Expired:`, now.isAfter(slotEnd));
+
+    return now.isAfter(slotEnd);
   };
 
   // 🔹 Handle booking form submit

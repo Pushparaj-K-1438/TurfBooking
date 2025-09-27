@@ -91,7 +91,7 @@ export async function POST(request) {
             name: 'session',
             value: sessionToken,
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
+            secure: false,
             sameSite: 'lax',
             path: '/',
             expires: expires

@@ -25,6 +25,7 @@ const Login = () => {
                 body: JSON.stringify({ mobile, password })
             });
             const data = await response.json();
+            console.log('API Response:', data);
             if (!response) {
                 showError('Invalid credentials. Please try again.');
                 setIsLoading(false);

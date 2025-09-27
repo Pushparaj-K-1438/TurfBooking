@@ -9,6 +9,11 @@ export default function GalleryPage() {
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
 
+  // Remove a selected file by index
+  const removeSelectedFile = (index) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
   // Fetch images on component mount
   useEffect(() => {
     fetchImages();
@@ -115,7 +120,7 @@ export default function GalleryPage() {
       }
     } catch (error) {
       console.error('Error deleting image:', error);
-      showError(error.message || 'Failed to delete image');
+      showError(error.message || 'Failed to delete image'); 
     }
   };
 
