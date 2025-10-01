@@ -8,7 +8,7 @@ const ContactCard = ({ icon, title, subtitle }) => {
     if (title === "Email Us Now") {
       window.location.href = "mailto:sanjuraj.1438@gmail.com";
     } else if (title === "Locate Us") {
-      window.location.href = "https://maps.app.goo.gl/HkHutqEG5jR9NmEA8";
+      window.location.href = "https://maps.app.goo.gl/xcZ8stYt9gxCcVif7";
     } else {
       window.location.href = "tel:7806995770";
     }
