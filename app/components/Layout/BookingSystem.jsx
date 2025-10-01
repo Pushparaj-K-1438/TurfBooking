@@ -7,22 +7,136 @@ import { toast, Slide } from 'react-toastify';
 
 const BookingSystem = () => {
   const [bookedSlots, setBookedSlots] = useState([]);
-  const timeSlots = [
-    "06:00 - 07:00", "07:00 - 08:00", "08:00 - 09:00", "09:00 - 10:00",
-    "10:00 - 11:00", "11:00 - 12:00", "12:00 - 13:00", "13:00 - 14:00",
-    "14:00 - 15:00", "15:00 - 16:00", "16:00 - 17:00", "17:00 - 18:00",
-    "18:00 - 19:00", "19:00 - 20:00", "20:00 - 21:00", "21:00 - 22:00"
-  ];
+  const [availableSlots, setAvailableSlots] = useState([]);
+  const [availableOffers, setAvailableOffers] = useState([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [loadingOffers, setLoadingOffers] = useState(false);
 
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
-  const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
+  const [selectedTimeSlots, setSelectedTimeSlots] = useState([]); // Changed to array for multiple slots
+  const [originalAmount, setOriginalAmount] = useState(0);
+  const [discountAmount, setDiscountAmount] = useState(0);
+  const [finalAmount, setFinalAmount] = useState(0);
+  const [appliedOffer, setAppliedOffer] = useState(null);
   const [nameError, setNameError] = useState('');
   const [mobileError, setMobileError] = useState('');
   const [timeSlotError, setTimeSlotError] = useState('');
 
-  // 🔹 Fetch booked slots whenever date changes
+  // 🔹 Fetch available slots
+  const fetchAvailableSlots = async () => {
+    setLoadingSlots(true);
+    try {
+      const response = await fetch('/api/admin/slots');
+      const data = await response.json();
+      console.log(data);
+      if (response.ok) {
+        setAvailableSlots(data.slots || []);
+      } else {
+        console.error('Failed to fetch available slots:', data.error);
+        // Fallback to static slots if API fails
+        setAvailableSlots([]);
+      }
+    } catch (error) {
+      console.error('Error fetching available slots:', error);
+      // Fallback to static slots if API fails
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
+  // 🔹 Fetch available offers
+  const fetchAvailableOffers = async () => {
+    setLoadingOffers(true);
+    try {
+      const response = await fetch('/api/admin/offers');
+      const data = await response.json();
+      console.log("offerdata",data);
+      if (response.ok) {
+        setAvailableOffers(data.offers || []);
+      } else {
+        console.error('Failed to fetch available offers:', data.error);
+        setAvailableOffers([]);
+      }
+    } catch (error) {
+      console.error('Error fetching available offers:', error);
+      setAvailableOffers([]);
+    } finally {
+      setLoadingOffers(false);
+    }
+  };
+
+  // 🔹 Calculate offer discount
+  const calculateOfferDiscount = () => {
+    if (selectedTimeSlots.length === 0) {
+      setOriginalAmount(0);
+      setDiscountAmount(0);
+      setFinalAmount(0);
+      setAppliedOffer(null);
+      return;
+    }
+
+    const totalSlots = selectedTimeSlots.length;
+    const currentDate = new Date();
+
+    // Get only the latest active offer (not all applicable offers)
+    const latestOffer = getLatestActiveOffer();
+
+    // Calculate original amount
+    const originalTotal = selectedTimeSlots.reduce((total, slotTimeRange) => {
+      const slot = availableSlots.find(s => `${s.startTime} - ${s.endTime}` === slotTimeRange);
+      return total + (slot ? slot.price : 0);
+    }, 0);
+
+    setOriginalAmount(originalTotal);
+
+    // Apply only the latest offer if it meets the minimum slots requirement
+    if (latestOffer && totalSlots >= latestOffer.minSlots) {
+      let discount = 0;
+      if (latestOffer.discountType === 'percentage') {
+        discount = (latestOffer.discountValue / 100) * originalTotal;
+      } else {
+        discount = Math.min(latestOffer.discountValue, originalTotal); // Don't exceed original amount
+      }
+
+      setDiscountAmount(discount);
+      setFinalAmount(originalTotal - discount);
+      setAppliedOffer(latestOffer);
+    } else {
+      setDiscountAmount(0);
+      setFinalAmount(originalTotal);
+      setAppliedOffer(null);
+    }
+  };
+  // 🔹 Get the latest active offer
+  const getLatestActiveOffer = () => {
+    const currentDate = new Date();
+    const activeOffers = availableOffers.filter(offer => {
+      const offerStartDate = new Date(offer.validFrom);
+      const offerEndDate = new Date(offer.validUntil);
+      return (
+        offer.isActive &&
+        currentDate >= offerStartDate &&
+        currentDate <= offerEndDate
+      );
+    });
+
+    // Sort by validFrom date (most recent first) and return the latest one
+    return activeOffers.sort((a, b) => new Date(b.validFrom) - new Date(a.validFrom))[0] || null;
+  };
+  const toggleSlotSelection = (slotTimeRange, slotPrice) => {
+    setSelectedTimeSlots(prev => {
+      const isSelected = prev.includes(slotTimeRange);
+      if (isSelected) {
+        // Remove slot
+        return prev.filter(slot => slot !== slotTimeRange);
+      } else {
+        // Add slot
+        return [...prev, slotTimeRange];
+      }
+    });
+  };
   useEffect(() => {
     const fetchBookedSlots = async () => {
       try {
@@ -39,6 +153,17 @@ const BookingSystem = () => {
     };
     if (date) fetchBookedSlots();
   }, [date]);
+
+  // Initialize available slots and offers on mount
+  useEffect(() => {
+    fetchAvailableSlots();
+    fetchAvailableOffers();
+  }, []);
+
+  // Calculate discounts whenever slots or offers change
+  useEffect(() => {
+    calculateOfferDiscount();
+  }, [selectedTimeSlots, availableSlots, availableOffers]);
 
   // 🔹 Check if slot is expired
   const isSlotExpired = (slot) => {
@@ -85,8 +210,8 @@ const BookingSystem = () => {
       setMobileError('Mobile is required');
       hasError = true;
     }
-    if (!selectedTimeSlot) {
-      setTimeSlotError('Time slot is required');
+    if (!selectedTimeSlots.length) {
+      setTimeSlotError('At least one time slot must be selected');
       hasError = true;
     }
 
@@ -104,7 +229,21 @@ const BookingSystem = () => {
       const response = await fetch('/api/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, mobile, date, timeSlot: selectedTimeSlot }),
+        body: JSON.stringify({
+          name,
+          mobile,
+          date,
+          timeSlots: selectedTimeSlots,
+          originalAmount,
+          discountAmount,
+          finalAmount,
+          appliedOffer: appliedOffer ? {
+            id: appliedOffer._id,
+            name: appliedOffer.name,
+            discountType: appliedOffer.discountType,
+            discountValue: appliedOffer.discountValue
+          } : null
+        }),
       });
 
       const data = await response.json();
@@ -112,31 +251,36 @@ const BookingSystem = () => {
       if (!response.ok) {
         const msg = data?.error || 'Failed to create booking';
         toast.error(msg, {
-            position: "top-center",
-            autoClose: 5000,
-            theme: "colored",
-            transition: Slide,
-        });
-        return;
-      }
-      // In the success block of your handleSubmit function
-      if (response.ok) {
-        // Update the local state immediately
-        setBookedSlots(prev => [...prev, selectedTimeSlot]);
-        
-        // Clear the form
-        setName('');
-        setMobile('');
-        setSelectedTimeSlot('');
-        
-        // Show success message
-        toast.success(`Your slot for ${selectedTimeSlot} has been booked successfully.`, {
           position: "top-center",
           autoClose: 5000,
           theme: "colored",
           transition: Slide,
         });
-        
+        return;
+      }
+
+      // Success handling
+      if (response.ok) {
+        // Update the local state immediately
+        setBookedSlots(prev => [...prev, ...selectedTimeSlots]);
+
+        // Clear the form
+        setName('');
+        setMobile('');
+        setSelectedTimeSlots([]);
+        setOriginalAmount(0);
+        setDiscountAmount(0);
+        setFinalAmount(0);
+        setAppliedOffer(null);
+
+        // Show success message
+        toast.success(`Your booking for ${selectedTimeSlots.length} slot(s) has been confirmed successfully.`, {
+          position: "top-center",
+          autoClose: 5000,
+          theme: "colored",
+          transition: Slide,
+        });
+
         // Optional: Refresh the booked slots from the server to ensure consistency
         const refreshResponse = await fetch(`/api/user?date=${date}`);
         if (refreshResponse.ok) {
@@ -162,6 +306,12 @@ const BookingSystem = () => {
       </div>
 
       <form className='flex flex-col p-6 border rounded-lg shadow-md gap-6' onSubmit={handleSubmit}>
+        {/* Dynamic Offer Banner - Show only if there's an active offer */}
+        {getLatestActiveOffer() && (
+          <div className="w-full bg-gradient-to-r from-[#2E7D32]/80 via-[#2E7D32]/60 to-[#FBC02D]/70 py-3 overflow-hidden relative rounded-sm text-white font-bold text-lg flex items-center justify-center">
+            🎉 Exclusive Deal of the Day - {getLatestActiveOffer().description || getLatestActiveOffer().name} 🎉
+          </div>
+        )}
         <h3 className='text-2xl font-medium text-black flex items-center gap-2 mb-2'>
           <User /> Personal Information
         </h3>
@@ -213,57 +363,72 @@ const BookingSystem = () => {
         {/* Time Slots */}
         <div className="w-full flex flex-col gap-1">
           <label className="text-black font-medium">Select Time Slot *</label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2">
-            {timeSlots.map((slot) => {
-              const isBooked = bookedSlots.includes(slot);
-              const expired = isSlotExpired(slot);
-              const disabled = isBooked || expired;
 
-              let bgColor = "bg-white border-[#E0F5E8]"; // default
-              let textColor = "text-black";
-              let borderColor = "border-[#E0F5E8]";
+          {loadingSlots ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+            </div>
+          ) : availableSlots.length > 0 ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-2">
+              {availableSlots
+                .filter(slot => slot.isActive)
+                .map((slot) => {
+                  const slotTimeRange = `${slot.startTime} - ${slot.endTime}`;
+                  const isBooked = bookedSlots.includes(slotTimeRange);
+                  const expired = isSlotExpired(slotTimeRange);
+                  const disabled = isBooked || expired;
 
-              if (expired) {
-                bgColor = "bg-gray-200";
-                textColor = "text-black";
-                borderColor = "border-gray-200";
-              } else if (isBooked) {
-                bgColor = "bg-[#E0F5E8]";
-                textColor = "text-[#16a249]";
-                borderColor = "border-[#E0F5E8]";
-              } else if (selectedTimeSlot === slot) {
-                bgColor = "bg-[#16a249]";
-                textColor = "text-white";
-                borderColor = "border-[#16a249]";
-              }
+                  let bgColor = "bg-white border-gray-200";
+                  let textColor = "text-black";
+                  let borderColor = "border-gray-200";
 
-              // Only add hover classes when not disabled
-              const hoverClass = !disabled
-                ? (selectedTimeSlot === slot ? "hover:bg-[#16a249]" : "hover:bg-[#e7b008]")
-                : "";
+                  if (expired) {
+                    bgColor = "bg-gray-200";
+                    textColor = "text-gray-500";
+                    borderColor = "border-gray-200";
+                  } else if (isBooked) {
+                    bgColor = "bg-green-50";
+                    textColor = "text-green-700";
+                    borderColor = "border-green-200";
+                  } else if (selectedTimeSlots.includes(slotTimeRange)) {
+                    bgColor = "bg-green-600";
+                    textColor = "text-white";
+                    borderColor = "border-green-600";
+                  }
 
-              return (
-                <button
-                  key={slot}
-                  type="button"
-                  disabled={disabled}
-                  onClick={() => !disabled && setSelectedTimeSlot(slot)}
-                  className={`relative p-4 rounded-lg border-2 text-sm font-medium min-h-[60px]
-                  flex items-center justify-center transition-all
-                  ${bgColor} ${textColor} ${borderColor} ${disabled ? "cursor-not-allowed pointer-events-none" : "cursor-pointer"} ${hoverClass}
-                `}
-                >
-                  <div className="flex flex-col">
-                    <span className="font-semibold">{slot.split(" - ")[0]}</span>
-                    <span className="text-xs opacity-80">to {slot.split(" - ")[1]}</span>
-                  </div>
-                  {isBooked && (
-                    <span className="absolute -top-2 -right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full shadow-md">Booked</span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+                  // Only add hover classes when not disabled
+                  const hoverClass = !disabled
+                    ? (selectedTimeSlots.includes(slotTimeRange) ? "hover:bg-green-700" : "hover:bg-green-50")
+                    : "";
+
+                  return (
+                    <button
+                      key={slot._id}
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => {
+                        if (!disabled) {
+                          toggleSlotSelection(slotTimeRange, slot.price);
+                        }
+                      }}
+                      className={`relative p-4 rounded-lg border-2 text-sm font-medium min-h-[60px] flex items-center justify-center transition-all ${bgColor} ${textColor} ${borderColor} ${disabled ? "cursor-not-allowed pointer-events-none" : "cursor-pointer"} ${hoverClass}`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-semibold">{moment(slot.startTime, 'HH:mm').format('h:mm A')} - {moment(slot.endTime, 'HH:mm').format('h:mm A')}</span>
+                        <span className="text-xs opacity-60 mt-1">₹{slot.price}</span>
+                      </div>
+                      {isBooked && (
+                        <span className="absolute -top-2 -right-2 bg-green-600 text-white text-xs px-2 py-1 rounded-full shadow-md">Booked</span>
+                      )}
+                    </button>
+                  );
+                })}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center text-black">
+              <p>No Slots available for this date</p>
+            </div>
+          )}
           <p className='text-red-500'>{timeSlotError}</p>
         </div>
 
@@ -274,9 +439,45 @@ const BookingSystem = () => {
             <p className='text-sm flex justify-between'><span>Full Name: </span><span>{name || '-'}</span></p>
             <p className='text-sm flex justify-between'><span>Mobile Number: </span><span>{mobile || '-'}</span></p>
             <p className='text-sm flex justify-between'><span>Pick Date: </span><span>{date || '-'}</span></p>
-            <p className='text-sm flex justify-between'><span>Selected Time Slot: </span><span>{selectedTimeSlot || '-'}</span></p>
+            <div className='text-sm flex flex-col gap-1'>
+              <span>Selected Time Slots: </span>
+              {selectedTimeSlots.length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {selectedTimeSlots.map((slot, index) => {
+                    const [startTime, endTime] = slot.split(' - ');
+                    return (
+                      <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                        {moment(startTime, 'HH:mm').format('h:mm A')} - {moment(endTime, 'HH:mm').format('h:mm A')}
+                      </span>
+                    );
+                  })}
+                </div>
+              ) : (
+                <span>-</span>
+              )}
+            </div>
+
+            {/* Original Amount */}
+            <p className='text-sm flex justify-between'>
+              <span>Subtotal: </span><span>₹{originalAmount}</span>
+            </p>
+
+            {/* Discount Information */}
+            {appliedOffer && (
+              <div className='text-sm flex flex-col gap-1 border-t pt-2 mt-2 border-[#E0F5E8]'>
+                <p className='text-green-600 font-medium flex items-center gap-1'>
+                  <span>🎉 {appliedOffer.name}</span>
+                </p>
+                <p className='text-sm flex justify-between'>
+                  <span>Discount ({appliedOffer.discountType === 'percentage' ? `${appliedOffer.discountValue}%` : `₹${appliedOffer.discountValue}`}): </span>
+                  <span className='text-green-600'>-₹{discountAmount.toFixed(2)}</span>
+                </p>
+              </div>
+            )}
+
+            {/* Final Amount */}
             <p className='text-sm font-medium flex justify-between border-t pt-2 mt-2 border-[#E0F5E8]'>
-              <span>Total: </span><span>₹400</span>
+              <span>Total: </span><span>₹{finalAmount.toFixed(2)}</span>
             </p>
           </div>
         </div>

@@ -40,7 +40,7 @@ const Hero = () => {
                             <ArrowRight className="ml-2 h-5 w-5" />
                         </a>
                         <a
-                            href="https://maps.app.goo.gl/LVcZUrzG8rSM4DgM8"
+                            href="https://maps.app.goo.gl/HkHutqEG5jR9NmEA8"
                             target="_blank"
                             variant="outline"
                             size="lg"

@@ -13,6 +13,7 @@ import {
 import { getTodaysBookings, deleteBooking } from '../../actions/bookings';
 import { format, parseISO } from 'date-fns';
 import { toast, showSuccess, showError } from '../../../lib/toast';
+import moment from 'moment';
 
 const UserBookings = () => {
     const [bookings, setBookings] = useState([]);
@@ -105,8 +106,18 @@ const UserBookings = () => {
 
     const sortedBookings = [...bookings].sort((a, b) => {
         if (sortBy === 'timeSlot') {
-            const timeA = a.timeSlot.split(' - ')[0];
-            const timeB = b.timeSlot.split(' - ')[0];
+            // For multiple slots, sort by the earliest slot in each booking
+            const getEarliestTime = (booking) => {
+                if (!booking.timeSlots || booking.timeSlots.length === 0) return '';
+                let earliest = booking.timeSlots[0];
+                for (const slot of booking.timeSlots) {
+                    if (slot < earliest) earliest = slot;
+                }
+                return earliest.split(' - ')[0];
+            };
+
+            const timeA = getEarliestTime(a);
+            const timeB = getEarliestTime(b);
             return sortOrder === 'asc'
                 ? timeA.localeCompare(timeB)
                 : timeB.localeCompare(timeA);
@@ -212,7 +223,20 @@ const UserBookings = () => {
                             )}
                             <div className="flex items-center text-sm text-gray-600">
                                 <Clock3 className="w-4 h-4 mr-2 text-gray-400" />
-                                {formatTime(booking.timeSlot)}
+                                {booking.timeSlots && booking.timeSlots.length > 0 ? (
+                                    <div className="flex flex-wrap gap-1">
+                                        {booking.timeSlots.map((slot, index) => {
+                                            const [startTime, endTime] = slot.split(' - ');
+                                            return (
+                                                <span key={index} className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs">
+                                                    {moment(startTime, 'HH:mm').format('h:mm A')} - {moment(endTime, 'HH:mm').format('h:mm A')}
+                                                </span>
+                                            );
+                                        })}
+                                    </div>
+                                ) : (
+                                    'Time not available'
+                                )}
                             </div>
                             <div className="flex items-center text-sm text-gray-600">
                                 <CalendarIcon className="w-4 h-4 mr-2 text-gray-400" />
@@ -226,20 +250,36 @@ const UserBookings = () => {
                             </p>
                             {(() => {
                                 try {
-                                    // Parse the booking date and time
-                                    const [startTime] = booking.timeSlot.split(' - ');
-                                    const [hours, minutes] = startTime.split(':').map(Number);
-                                    
-                                    // Create date object for the booking
-                                    const [year, month, day] = booking.date.split('-').map(Number);
-                                    const bookingTime = new Date(year, month - 1, day, hours, minutes);
-                                    
+                                    // Handle multiple slots in booking
+                                    if (!booking.timeSlots || booking.timeSlots.length === 0) {
+                                        return null;
+                                    }
+
+                                    // Find the earliest slot in the booking
+                                    let earliestBookingTime = null;
+                                    for (const slot of booking.timeSlots) {
+                                        const [startTime] = slot.split(' - ');
+                                        const [hours, minutes] = startTime.split(':').map(Number);
+
+                                        // Create date object for this slot
+                                        const [year, month, day] = booking.date.split('-').map(Number);
+                                        const slotTime = new Date(year, month - 1, day, hours, minutes);
+
+                                        if (!earliestBookingTime || slotTime < earliestBookingTime) {
+                                            earliestBookingTime = slotTime;
+                                        }
+                                    }
+
+                                    if (!earliestBookingTime) {
+                                        return null;
+                                    }
+
                                     // Get current time
                                     const now = new Date();
-                                    
-                                    // Calculate the cutoff time (10 minutes before booking)
-                                    const tenMinutesBefore = new Date(bookingTime.getTime() + (10 * 60 * 1000));
-                                    
+
+                                    // Calculate the cutoff time (10 minutes before the earliest slot)
+                                    const tenMinutesBefore = new Date(earliestBookingTime.getTime() + (10 * 60 * 1000));
+
                                     // Show cancel button only if current time is before the cutoff
                                     if (now < tenMinutesBefore) {
                                         return (

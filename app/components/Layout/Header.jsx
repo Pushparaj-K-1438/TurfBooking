@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { usePathname, useRouter } from 'next/navigation';
-import { Menu, X, Images, Users, Phone, LayoutDashboard, LogOut, User, House } from "lucide-react";
+import { Menu, X, Images, Users, Phone, LayoutDashboard, LogOut, BadgeIndianRupee, House, ClockPlus } from "lucide-react";
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -30,7 +30,7 @@ const Header = () => {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { 
+      await fetch('/api/auth/logout', {
         method: 'POST',
         credentials: 'include'
       });
@@ -53,14 +53,16 @@ const Header = () => {
   const privateNavItems = [
     { icon: LayoutDashboard, label: "Dashboard", href: "/auth/dashboard" },
     { icon: Images, label: "Gallery", href: "/auth/gallery" },
+    { icon: ClockPlus, label: "Slots", href: "/auth/slots" },
+    { icon: BadgeIndianRupee, label: "Offers", href: "/auth/offers" },
   ];
 
   // Combine navigation items based on auth state
   const navItems = [
     ...(isLoggedIn ? privateNavItems : commonNavItems),
-    { 
-      icon: isLoggedIn ? LogOut : Users, 
-      label: isLoggedIn ? "Logout" : "Login", 
+    {
+      icon: isLoggedIn ? LogOut : Users,
+      label: isLoggedIn ? "Logout" : "Login",
       href: isLoggedIn ? "#" : "/login",
       onClick: isLoggedIn ? handleLogout : null
     },
@@ -72,8 +74,9 @@ const Header = () => {
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <h1 className="text-2xl font-bold gradient-primary bg-clip-text text-black">
-              TurfBook
+            <h1 className="text-3xl font-semibold tracking-[0.15em] text-gray-800 flex items-center gap-2">
+              <span className="w-2 h-8 bg-emerald-600 rounded-sm"></span>
+              MRK TURF
             </h1>
           </div>
 
@@ -85,9 +88,8 @@ const Header = () => {
                   key={item.label}
                   variant="ghost"
                   size="sm"
-                  className={`transition-smooth flex items-center font-medium ${
-                    pathname === item.href ? 'text-primary' : 'hover:text-primary'
-                  }`}
+                  className={`transition-smooth flex items-center font-medium ${pathname === item.href ? 'text-primary' : 'hover:text-primary'
+                    }`}
                   href={item.href}
                   onClick={(e) => {
                     if (item.onClick) {
