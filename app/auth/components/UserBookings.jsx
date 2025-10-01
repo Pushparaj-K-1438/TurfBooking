@@ -202,7 +202,7 @@ const UserBookings = () => {
                                         {booking.name || 'Guest User'}
                                     </h3>
                                     <p className="text-sm text-gray-500">
-                                        Booking ID: {booking._id}
+                                        Booking ID: {booking.bookingId}
                                     </p>
                                 </div>
                             </div>

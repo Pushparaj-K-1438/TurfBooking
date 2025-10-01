@@ -3,6 +3,32 @@ import Booking from "../../../models/booking";
 import Slot from "../../../models/slots";
 import { NextResponse } from "next/server";
 
+// Function to generate a unique booking ID
+async function generateBookingId() {
+  const timestamp = Date.now().toString().slice(-6); // Last 6 digits of timestamp
+  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0'); // 3-digit random number
+
+  let bookingId;
+  let isUnique = false;
+
+  // Keep generating until we find a unique ID
+  while (!isUnique) {
+    bookingId = `BK${timestamp}${random}`;
+
+    // Check if this booking ID already exists
+    const existingBooking = await Booking.findOne({ bookingId });
+    if (!existingBooking) {
+      isUnique = true;
+    } else {
+      // If not unique, generate a new random number
+      const newRandom = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
+      bookingId = `BK${timestamp}${newRandom}`;
+    }
+  }
+
+  return bookingId;
+}
+
 export async function POST(request) {
   try {
     await connectDB();
@@ -57,8 +83,12 @@ export async function POST(request) {
       }
     }
 
+    // Generate unique booking ID
+    const bookingId = await generateBookingId();
+
     // Create a single booking record with multiple slots
     const booking = await Booking.create({
+      bookingId,
       name,
       mobile,
       date,
@@ -72,6 +102,7 @@ export async function POST(request) {
     return NextResponse.json({
       message: `Your booking for ${timeSlots.length} slot(s) has been confirmed successfully.`,
       booking,
+      bookingId,
       totalSlots: timeSlots.length
     }, { status: 201 });
 

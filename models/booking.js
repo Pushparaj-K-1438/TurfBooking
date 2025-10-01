@@ -2,6 +2,11 @@ import mongoose from "mongoose";
 
 const bookingSchema = new mongoose.Schema(
   {
+    bookingId: {
+      type: String,
+      unique: true,
+      required: true
+    },
     name: { type: String, required: true },
     mobile: { type: String, required: true },
     date: { type: String, required: true },

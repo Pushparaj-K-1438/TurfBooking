@@ -274,9 +274,9 @@ const BookingSystem = () => {
         setAppliedOffer(null);
 
         // Show success message
-        toast.success(`Your booking for ${selectedTimeSlots.length} slot(s) has been confirmed successfully.`, {
+        toast.success(`Your booking for ${selectedTimeSlots.length} slot(s) has been confirmed successfully. Booking ID: ${data.bookingId}`, {
           position: "top-center",
-          autoClose: 5000,
+          autoClose: 8000,
           theme: "colored",
           transition: Slide,
         });
