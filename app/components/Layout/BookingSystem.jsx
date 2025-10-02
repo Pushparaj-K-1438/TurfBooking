@@ -23,6 +23,7 @@ const BookingSystem = () => {
   const [nameError, setNameError] = useState('');
   const [mobileError, setMobileError] = useState('');
   const [timeSlotError, setTimeSlotError] = useState('');
+  const hideBookings = true;
 
   // 🔹 Fetch available slots
   const fetchAvailableSlots = async () => {
@@ -52,7 +53,6 @@ const BookingSystem = () => {
     try {
       const response = await fetch('/api/admin/offers');
       const data = await response.json();
-      console.log("offerdata",data);
       if (response.ok) {
         setAvailableOffers(data.offers || []);
       } else {
@@ -304,14 +304,25 @@ const BookingSystem = () => {
       <div className='flex flex-col items-center justify-center'>
         <h2 className='text-2xl font-bold mb-4 text-black capitalize'>Book your slot now</h2>
       </div>
-
-      <form className='flex flex-col p-6 border rounded-lg shadow-md gap-6' onSubmit={handleSubmit}>
+      {hideBookings ? (
+        /* Booking Availability Notice */
+        <div className="w-full bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
+          <p className="text-blue-800 font-medium text-lg">
+            📅 Bookings will be open starting tomorrow
+          </p>
+          <p className="text-blue-600 text-sm mt-1">
+            We are currently preparing the system for tomorrow's bookings
+          </p>
+        </div>
+      ) : (
+        <form className='flex flex-col p-6 border rounded-lg shadow-md gap-6' onSubmit={handleSubmit}>
         {/* Dynamic Offer Banner - Show only if there's an active offer */}
         {getLatestActiveOffer() && (
           <div className="w-full bg-gradient-to-r from-[#2E7D32]/80 via-[#2E7D32]/60 to-[#FBC02D]/70 py-3 overflow-hidden relative rounded-sm text-white font-bold text-lg flex items-center justify-center">
             🎉 Exclusive Deal of the Day - {getLatestActiveOffer().description || getLatestActiveOffer().name} 🎉
           </div>
         )}
+
         <h3 className='text-2xl font-medium text-black flex items-center gap-2 mb-2'>
           <User /> Personal Information
         </h3>
@@ -486,6 +497,7 @@ const BookingSystem = () => {
           Confirm Booking
         </button>
       </form>
+      )}
     </section>
   );
 };
