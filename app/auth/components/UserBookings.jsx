@@ -263,7 +263,7 @@ const UserBookings = () => {
                                     </div>
                                 )}
                                 <div className="flex items-center justify-between text-sm">
-                                    <span className="text-gray-600">Final Amount:</span>
+                                    <span className="text-gray-600">{booking.discountAmount > 0 ? "Discounted Amount" : "Total Amount"}</span>
                                     <span className="font-semibold text-green-600">₹{booking.finalAmount || 0}</span>
                                 </div>
                             </div>
