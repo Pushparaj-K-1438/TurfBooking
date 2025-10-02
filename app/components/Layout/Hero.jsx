@@ -24,7 +24,7 @@ const Hero = () => {
                             <span className="block text-accent">Turf Experience</span>
                         </h1>
                         <p className="text-xl sm:text-2xl text-primary-foreground/90 mb-8 max-w-3xl mx-auto">
-                            Premium quality turfs available 24/7. Easy booking, instant confirmation, and amazing playing experience.
+                        Premium quality turfs for cricket and football available. Easy booking, instant confirmation, and an amazing playing experience
                         </p>
                     </div>
 

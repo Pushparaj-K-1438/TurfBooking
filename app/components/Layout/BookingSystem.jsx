@@ -329,7 +329,7 @@ const BookingSystem = () => {
 
         {/* Dynamic Offer Banner - Show only if there's an active offer */}
         {getLatestActiveOffer() && (
-          <div className="w-full bg-gradient-to-r from-[#2E7D32]/80 via-[#2E7D32]/60 to-[#FBC02D]/70 py-3 overflow-hidden relative rounded-sm text-white font-bold text-lg flex items-center justify-center">
+          <div className="w-full bg-gradient-to-r from-[#2E7D32]/80 via-[#2E7D32]/60 to-[#FBC02D]/70 py-3 overflow-hidden relative rounded-sm text-white font-bold text-lg flex items-center justify-center px-6">
             🎉 Exclusive Deal of the Day - {getLatestActiveOffer().description || getLatestActiveOffer().name} 🎉
           </div>
         )}
