@@ -1,19 +1,18 @@
 'use client';
 import React, { useEffect, useState } from 'react';
 import moment from 'moment-timezone';
-import { User, Phone } from "lucide-react";
+import { User, Phone, Mail } from "lucide-react";
 import DatePicker from '../DatePicker';
 import { toast, Slide } from 'react-toastify';
-
 const BookingSystem = () => {
   const [bookedSlots, setBookedSlots] = useState([]);
   const [availableSlots, setAvailableSlots] = useState([]);
   const [availableOffers, setAvailableOffers] = useState([]);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [loadingOffers, setLoadingOffers] = useState(false);
-
   const [name, setName] = useState('');
   const [mobile, setMobile] = useState('');
+  const [email, setEmail] = useState('');
   const [date, setDate] = useState(() => new Date().toISOString().split("T")[0]);
   const [selectedTimeSlots, setSelectedTimeSlots] = useState([]); // Changed to array for multiple slots
   const [originalAmount, setOriginalAmount] = useState(0);
@@ -22,8 +21,9 @@ const BookingSystem = () => {
   const [appliedOffer, setAppliedOffer] = useState(null);
   const [nameError, setNameError] = useState('');
   const [mobileError, setMobileError] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [timeSlotError, setTimeSlotError] = useState('');
-  const hideBookings = true;
+  const [isBooking, setIsBooking] = useState(false);
 
   // 🔹 Fetch available slots
   const fetchAvailableSlots = async () => {
@@ -195,10 +195,12 @@ const BookingSystem = () => {
   // 🔹 Handle booking form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsBooking(true);
 
     // Reset errors
     setNameError('');
     setMobileError('');
+    setEmailError('');
     setTimeSlotError('');
 
     let hasError = false;
@@ -210,12 +212,17 @@ const BookingSystem = () => {
       setMobileError('Mobile is required');
       hasError = true;
     }
+    if (!email) {
+      setEmailError('Email is required');
+      hasError = true;
+    }
     if (!selectedTimeSlots.length) {
       setTimeSlotError('At least one time slot must be selected');
       hasError = true;
     }
 
     if (hasError) {
+      setIsBooking(false);
       toast.error('Please fill all the fields!', {
         position: "top-center",
         autoClose: 5000,
@@ -232,6 +239,7 @@ const BookingSystem = () => {
         body: JSON.stringify({
           name,
           mobile,
+          email,
           date,
           timeSlots: selectedTimeSlots,
           originalAmount,
@@ -267,6 +275,7 @@ const BookingSystem = () => {
         // Clear the form
         setName('');
         setMobile('');
+        setEmail('');
         setSelectedTimeSlots([]);
         setOriginalAmount(0);
         setDiscountAmount(0);
@@ -296,6 +305,8 @@ const BookingSystem = () => {
         theme: "colored",
         transition: Slide,
       });
+    } finally {
+      setIsBooking(false);
     }
   };
 
@@ -304,18 +315,18 @@ const BookingSystem = () => {
       <div className='flex flex-col items-center justify-center'>
         <h2 className='text-2xl font-bold mb-4 text-black capitalize'>Book your slot now</h2>
       </div>
-      {hideBookings ? (
-        /* Booking Availability Notice */
-        <div className="w-full bg-blue-50 border border-blue-200 rounded-lg p-4 text-center">
-          <p className="text-blue-800 font-medium text-lg">
-            📅 Bookings will be open starting tomorrow
-          </p>
-          <p className="text-blue-600 text-sm mt-1">
-            We are currently preparing the system for tomorrow's bookings
-          </p>
-        </div>
-      ) : (
-        <form className='flex flex-col p-6 border rounded-lg shadow-md gap-6' onSubmit={handleSubmit}>
+      <form className='relative flex flex-col p-6 border rounded-lg shadow-md gap-6' onSubmit={handleSubmit}>
+        {/* Booking Loading Backdrop */}
+        {isBooking && (
+              <div className="absolute inset-0 w-full h-full bg-black/50 flex justify-center items-center z-50">
+              <div className="bg-white p-5 rounded-lg text-center shadow-lg">
+                <div className="text-green-700 text-2xl mb-2.5">⏳</div>
+                <p className="text-gray-700 text-base mb-0">Processing your booking...</p>
+                <p className="text-gray-500 text-sm mt-2.5">Please wait while we confirm your slot and send confirmation emails.</p>
+              </div>
+            </div>
+        )}
+
         {/* Dynamic Offer Banner - Show only if there's an active offer */}
         {getLatestActiveOffer() && (
           <div className="w-full bg-gradient-to-r from-[#2E7D32]/80 via-[#2E7D32]/60 to-[#FBC02D]/70 py-3 overflow-hidden relative rounded-sm text-white font-bold text-lg flex items-center justify-center">
@@ -361,6 +372,24 @@ const BookingSystem = () => {
             <span className="absolute inset-y-0 flex w-12 items-center justify-center text-black"><Phone /></span>
           </div>
           <p className='text-red-500'>{mobileError}</p>
+        </div>
+
+        {/* Email */}
+        <div className="w-full flex flex-col gap-1">
+          <label htmlFor="email" className='text-black font-medium'>Email Address *</label>
+          <div className="relative">
+            <input
+              type="email"
+              id="email"
+              name="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email address"
+              className="w-full bg-[#f6f8f6] text-sm border border-slate-200 rounded-md px-12 py-2 focus:outline-none focus:border-slate-400 text-black"
+            />
+            <span className="absolute inset-y-0 flex w-12 items-center justify-center text-black"><Mail /></span>
+          </div>
+          <p className='text-red-500'>{emailError}</p>
         </div>
 
         {/* Date */}
@@ -449,6 +478,7 @@ const BookingSystem = () => {
           <div className='flex flex-col gap-1'>
             <p className='text-sm flex justify-between'><span>Full Name: </span><span>{name || '-'}</span></p>
             <p className='text-sm flex justify-between'><span>Mobile Number: </span><span>{mobile || '-'}</span></p>
+            <p className='text-sm flex justify-between'><span>Email Address: </span><span>{email || '-'}</span></p>
             <p className='text-sm flex justify-between'><span>Pick Date: </span><span>{date || '-'}</span></p>
             <div className='text-sm flex flex-col gap-1'>
               <span>Selected Time Slots: </span>
@@ -493,11 +523,24 @@ const BookingSystem = () => {
           </div>
         </div>
 
-        <button type="submit" className='bg-[#16a249] text-white py-2 px-4 rounded-md hover:bg-primary/90 transition cursor-pointer'>
-          Confirm Booking
+        <button
+          type="submit"
+          disabled={isBooking}
+          className={`py-2 px-4 rounded-md transition cursor-pointer ${isBooking
+              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+              : 'bg-[#16a249] text-white hover:bg-primary/90'
+            }`}
+        >
+          {isBooking ? (
+            <div className="flex items-center gap-2 justify-center">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              Processing...
+            </div>
+          ) : (
+            'Confirm Booking'
+          )}
         </button>
       </form>
-      )}
     </section>
   );
 };

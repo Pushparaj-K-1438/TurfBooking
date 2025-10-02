@@ -9,6 +9,7 @@ const bookingSchema = new mongoose.Schema(
     },
     name: { type: String, required: true },
     mobile: { type: String, required: true },
+    email: { type: String, required: true },
     date: { type: String, required: true },
     timeSlots: [{ type: String, required: true }],
     totalAmount: { type: Number, required: true },

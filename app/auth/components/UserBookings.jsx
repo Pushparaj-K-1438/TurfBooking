@@ -242,6 +242,31 @@ const UserBookings = () => {
                                 <CalendarIcon className="w-4 h-4 mr-2 text-gray-400" />
                                 {formatDate(booking.date)}
                             </div>
+
+                            {/* Pricing Information */}
+                            <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                                {booking.appliedOffer && (
+                                    <div className="mt-2 text-xs text-green-600 bg-green-50 px-2 py-1 rounded">
+                                        🎉 {booking.appliedOffer.name} applied
+                                    </div>
+                                )}
+                                {booking.discountAmount > 0 && (
+                                    <div className="flex items-center justify-between text-sm mt-1">
+                                        <span className="text-gray-500">Total Amount:</span>
+                                        <span className="text-gray-500">₹{booking.totalAmount || 0}</span>
+                                    </div>
+                                )}
+                                {booking.discountAmount > 0 && (
+                                    <div className="flex items-center justify-between text-sm mt-1">
+                                        <span className="text-gray-600">Discount Saved:</span>
+                                        <span className="font-medium text-green-600">₹{booking.discountAmount}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center justify-between text-sm">
+                                    <span className="text-gray-600">Final Amount:</span>
+                                    <span className="font-semibold text-green-600">₹{booking.finalAmount || 0}</span>
+                                </div>
+                            </div>
                         </div>
 
                         <div className="mt-4 pt-4 border-t border-gray-100 flex justify-between items-center">

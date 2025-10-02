@@ -1,6 +1,7 @@
 import connectDB from "../../../lib/mongose";
 import Booking from "../../../models/booking";
 import Slot from "../../../models/slots";
+import { sendBookingConfirmationEmail, sendAdminNotificationEmail } from "../../../lib/email";
 import { NextResponse } from "next/server";
 
 // Function to generate a unique booking ID
@@ -33,13 +34,16 @@ export async function POST(request) {
   try {
     await connectDB();
 
-    const { name, mobile, date, timeSlots, originalAmount, discountAmount, finalAmount, appliedOffer } = await request.json();
+    const { name, mobile, email, date, timeSlots, originalAmount, discountAmount, finalAmount, appliedOffer } = await request.json();
 
     if (!name) {
       return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
     if (!mobile) {
       return NextResponse.json({ error: "Mobile is required" }, { status: 400 });
+    }
+    if (!email) {
+      return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
     if (!date) {
       return NextResponse.json({ error: "Date is required" }, { status: 400 });
@@ -91,6 +95,7 @@ export async function POST(request) {
       bookingId,
       name,
       mobile,
+      email,
       date,
       timeSlots,
       totalAmount: originalAmount,
@@ -98,6 +103,38 @@ export async function POST(request) {
       finalAmount,
       appliedOffer
     });
+
+    // Send confirmation emails
+    try {
+      const bookingDetails = {
+        date,
+        timeSlots,
+        mobile,
+        bookingId,
+        totalAmount: originalAmount,
+        discountAmount,
+        finalAmount
+      };
+
+      // Send email to user
+      const userEmailResult = await sendBookingConfirmationEmail(email, name, bookingDetails);
+      if (userEmailResult.success) {
+        console.log(`User confirmation email sent successfully to ${email}`);
+      } else {
+        console.error(`Failed to send user confirmation email to ${email}:`, userEmailResult.error);
+      }
+
+      // Send email to admin
+      const adminEmailResult = await sendAdminNotificationEmail('sanjuraj.1438@gmail.com', name, bookingDetails);
+      if (adminEmailResult.success) {
+        console.log('Admin notification email sent successfully');
+      } else {
+        console.error('Failed to send admin notification email:', adminEmailResult.error);
+      }
+    } catch (emailError) {
+      console.error('Error sending confirmation emails:', emailError);
+      // Don't fail the booking if email sending fails
+    }
 
     return NextResponse.json({
       message: `Your booking for ${timeSlots.length} slot(s) has been confirmed successfully.`,
