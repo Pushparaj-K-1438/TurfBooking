@@ -61,12 +61,12 @@ const Header = () => {
   const navItems = [
     ...(isLoggedIn ? privateNavItems : commonNavItems),
     {
-      icon: isLoggedIn ? LogOut : Users,
-      label: isLoggedIn ? "Logout" : "Login",
+      icon: isLoggedIn ? LogOut : null,
+      label: isLoggedIn ? "Logout" : "",
       href: isLoggedIn ? "#" : "/login",
       onClick: isLoggedIn ? handleLogout : null
     },
-  ];
+  ].filter(item => item.label !== "");
 
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 backdrop-blur-md border-b border-gray-200 shadow-soft bg-white text-black">
